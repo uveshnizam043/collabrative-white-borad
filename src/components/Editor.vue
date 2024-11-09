@@ -265,7 +265,6 @@
 
 <script setup>
 import { ref, onBeforeUnmount, onMounted, defineEmits, watch } from 'vue'
-import { io } from 'socket.io-client'
 
 import Blockquote from '@tiptap/extension-blockquote'
 import Document from '@tiptap/extension-document'
@@ -278,12 +277,30 @@ import { DOMSerializer } from 'prosemirror-model'
 import { Mark } from '@tiptap/pm/model'
 import { isTextSelection } from '@tiptap/core'
 import TextAlign from '@tiptap/extension-text-align'
+import { ySyncPlugin, yCursorPlugin } from 'y-prosemirror'
 import Collaboration from '@tiptap/extension-collaboration'
 import * as Y from 'yjs'
-import { TiptapCollabProvider } from '@hocuspocus/provider'
+import { HocuspocusProvider } from '@hocuspocus/provider'
+import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
+import Placeholder from '@tiptap/extension-placeholder'
 
-const doc = new Y.Doc() // Initialize Y.Doc for shared editing
+const ydoc = new Y.Doc()
+// Initialize Y.Doc for shared editing
+//props
+const provider = new HocuspocusProvider({
+  url: 'ws://localhost:1234', // Ensure Hocuspocus is running on this port
+  name: 'my-collaborative-document',
+  document: ydoc
+})
 
+const props = defineProps({
+  editorExtendedExtension: {
+    type: Array,
+    default: () => [] // Provide a default empty array
+  }
+})
+
+//state
 const dialogPosition = ref({ top: 0, left: 0 })
 const showBubbleMenu = ref(false)
 const showDialog = ref(false)
@@ -307,7 +324,6 @@ const forceHide = ref({
   first: false,
   second: false
 })
-let socket
 
 const blurInput = () => {}
 
@@ -396,7 +412,9 @@ let debounceTimer
 
 onMounted(async () => {
   // Handle document-load event to get the current document state
-
+  provider.on('status', (status) => {
+    console.log('Collaboration status:', status)
+  })
   editor.value = new Editor({
     content: initialContent.value,
     // onSelectionUpdate,
@@ -418,9 +436,18 @@ onMounted(async () => {
         openOnClick: false,
         autolink: true
       }),
-      Collaboration.configure({
-        document: doc // Configure Y.Doc for collaboration
-      })
+      CollaborationCursor.configure({
+        provider: provider,
+        user: {
+          name: 'Your Name', // Customize with user’s name
+          color: '#f783ac' // Customize with user’s unique color
+        }
+      }),
+      Placeholder.configure({
+        placeholder: 'Start collaborating…'
+      }),
+      Collaboration.configure({ document: ydoc }),
+      ...props.editorExtendedExtension // Spread operator to include additional extensions
     ]
   })
 
@@ -438,23 +465,23 @@ onMounted(async () => {
   })
 })
 
-onBeforeUnmount(() => {
-  editor.value.destroy()
-})
+// onBeforeUnmount(() => {
+//   editor.value.destroy()
+// })
 </script>
 
-<style scoped lang="scss">
+<style lang="scss">
 [contenteditable='true'] {
-  border: 0px solid #ccc; /* Example: Add a border */
-  font-style: italic; /* Example: Italicize the text */
+  // border: 0px solid #ccc; /* Example: Add a border */
+  // font-style: italic; /* Example: Italicize the text */
 
-  padding: 1rem;
-  // background-color: red;
+  // padding: 1rem;
+  // // background-color: red;
 }
 /* Global styling */
 p {
-  margin: 1em 0;
-  color: red;
+  // margin: 1em 0;
+  // color: red;
 }
 
 .editor {
@@ -568,5 +595,30 @@ strong {
   text-overflow: ellipsis; /* Add ellipsis (...) */
   display: inline-block;
   vertical-align: middle; /* Align vertically with buttons */
+}
+.is-active {
+  background-color: #f5f4b3;
+}
+
+.collaboration-cursor__caret {
+  border-left: 2px solid #000;
+  border-right: 2px solid #000;
+  margin-left: -1px;
+  margin-right: -1px;
+  pointer-events: none;
+  position: relative;
+  word-break: normal;
+}
+
+.collaboration-cursor__label {
+  border-radius: 3px 3px 3px 0;
+  color: #000;
+  font-size: 12px;
+  font-weight: 600;
+  left: -1px;
+  padding: 0.1rem 0.3rem;
+  position: absolute;
+  top: -1.4em;
+  white-space: nowrap;
 }
 </style>

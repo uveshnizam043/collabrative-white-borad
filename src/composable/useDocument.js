@@ -22,7 +22,7 @@ export const getDocuments = async () => {
 
         const { get, data, loading, error } = useGet("document/get")
         await get()
-        documentList.value = data.value.data
+        documentList.value = data.value
 
     } catch (error) {
         console.error('error:', error)

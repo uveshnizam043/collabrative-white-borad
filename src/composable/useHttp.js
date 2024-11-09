@@ -38,7 +38,7 @@ export function useGet(endpoint) {
             if (!jsonRes.success) {
                 error.value = jsonRes.message || 'Request failed.';
             } else {
-                data.value = jsonRes;
+                data.value = jsonRes.data;
             }
 
         } catch (err) {
@@ -156,10 +156,11 @@ export function usePost(endpoint) {
                 },
                 body: JSON.stringify(body),
             });
-            if (!res.ok) {
-                error.value = await res.json();
+            const jsonRes = await res.json();
+            if (!jsonRes.success) {
+                error.value = jsonRes.message || 'Request failed.';
             } else {
-                data.value = await res.json();
+                data.value = jsonRes.data;
             }
         } catch (err) {
             error.value = err;

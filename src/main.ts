@@ -1,7 +1,7 @@
 import './assets/main.css'
 
 import { createApp } from 'vue'
-import { createPinia } from 'pinia'
+// import { createPinia } from 'pinia'
 import { state } from './composable/useAuth'
 import { verifyToken } from './composable/useAuth'
 import axios from './service/axios'
@@ -12,7 +12,7 @@ import router from './router'
 const app = createApp(App)
 
 import { verifyToken } from './composable/useAuth'
-
+import ClickOutside from './directives/clickOutside.js'
 router.beforeEach(async (to, from, next) => {
   const token = localStorage.getItem('collaborative-token')
   if (!to.meta.public && !token) {
@@ -24,7 +24,7 @@ router.beforeEach(async (to, from, next) => {
       localStorage.removeItem('collaborative-token')
       next({ name: 'login' })
     } else {
-      next()
+      next({ name: 'documents' })
     }
   } else {
     if (token && !state.user) {
@@ -35,7 +35,8 @@ router.beforeEach(async (to, from, next) => {
   next()
 })
 
-app.use(createPinia())
+// app.use(createPinia())
 app.use(router)
+app.directive('click-outside', ClickOutside)
 
 app.mount('#app')

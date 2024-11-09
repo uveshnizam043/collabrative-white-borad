@@ -31,15 +31,17 @@ export const login = async ({ email, password }) => {
         //     email,
         //     password
         // })
-        const { post, data } = usePost('/users/login')
+        const { post, data } = usePost('users/login')
         await post({
             email,
             password
         })
+        console.log("login", data.value.user);
         state.user = data.value.user
         state.token = data.value.accessToken
         state.isAuthenticated = true
         localStorage.setItem('collaborative-token', data.value.accessToken);
+        console.log('state', state.user);
     } catch (error) {
         console.error('error:', error)
     }
@@ -50,7 +52,7 @@ export const verifyToken = async () => {
         const { get, data, error } = useGet('users/self');
         await get();
         if (!error.value && data.value) {
-            state.user = data.value.data.user;
+            state.user = data.value.user;
             return { success: true, data: data.value };  // Return success and data
         } else {
             throw new Error(error.value || 'Token verification failed.');
@@ -60,18 +62,18 @@ export const verifyToken = async () => {
     }
 };
 
-export const refreshToken = async () => {
-    try {
-        const { get, data, error } = useGet('users/self');
-        await get();
-        if (!error.value && data.value) {
-            state.user = data.value.data.user;
-            return { success: true, data: data.value };
-        } else {
-            throw new Error(error.value || 'Token verification failed.');
-        }
-    } catch (err) {
-        return { success: false, error: err.message };  // Return error
-    }
-};
+// export const refreshToken = async () => {
+//     try {
+//         const { get, data, error } = useGet('users/self');
+//         await get();
+//         if (!error.value && data.value) {
+//             state.user = data.value.data.user;
+//             return { success: true, data: data.value };
+//         } else {
+//             throw new Error(error.value || 'Token verification failed.');
+//         }
+//     } catch (err) {
+//         return { success: false, error: err.message };  // Return error
+//     }
+// };
 
